@@ -17,9 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-app = FastAPI()
-
 @app.get('/')
 async def root():
     return '<Geeleed/> สวัสดีครับ api นี้พยายามรวบรวมคณิตศาสตร์ต่าง ๆ ที่ใช้งานบ่อย ๆ มาทำเป็น api ไว้ โดยสามารถไปที่ /docs เพื่อดูรายละเอียดของ api ต่าง ๆ ได้ ขอบคุณครับ'
@@ -32,7 +29,7 @@ async def sha256(text:str):
     inst.update(text.encode('utf-8'))
     hash_binary = inst.digest()
     hash_hex = hash_binary.hex()
-    return hash_hex
+    return {"hash_hex":hash_hex}
 
 # api แปลงเลขฐาน
 @app.get('/convert_base/{number}/{from_base}/{to_base}/')
@@ -48,20 +45,20 @@ async def convert_base(number,from_base=10,to_base=16):
         remainder = dec%to_base
         result = keyValue[str(remainder)]+result
         dec //= to_base
-    return result
+    return {"result":result}
 
 # สุ่มตัวเลข
 @app.get("/random/{min}/{max}/{num}/")
 async def randomNumber(min:float,max:float,num:int):
-    return np.random.uniform(float(min),float(max),int(num)).tolist()
+    return {"result":np.random.uniform(float(min),float(max),int(num)).tolist()}
 
 # การจัดเรียงแบบ permutation
 @app.get("/permutation/{n}/{r}/")
 async def permuation(n: int , r : int ):
-    return math.factorial(int(n))/math.factorial(int(n)-int(r))
+    return {"result":math.factorial(int(n))/math.factorial(int(n)-int(r))}
 
 # การจัดเรียงแบบ commutation
 @app.get("/commutation/{n}/{r}/")
 async def commutation(n: int , r : int ):
-    return math.factorial(int(n))/math.factorial(int(n)-int(r))/math.factorial(int(r))
+    return {"result":math.factorial(int(n))/math.factorial(int(n)-int(r))/math.factorial(int(r))}
 
