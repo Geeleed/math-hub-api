@@ -51,3 +51,4 @@ async def permuation(n: int , r : int ):
 @app.get("/commutation/{n}/{r}/")
 async def commutation(n: int , r : int ):
     return math.factorial(int(n))/math.factorial(int(n)-int(r))/math.factorial(int(r))
+
