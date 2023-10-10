@@ -41,19 +41,19 @@ def convert_base(number,from_base=10,to_base=16):
     return {"result":result}
 
 # สุ่มตัวเลข
-@app.get("/random/{min}/{max}/{num}/")
-def randomNumber(min:float,max:float,num:int):
-    return {"result":np.random.uniform(float(min),float(max),int(num)).tolist()}
+@app.get("/random/{Min}/{Max}/{Num}/")
+def random_number(Min:float,Max:float,Num:int):
+    return {"result":np.random.uniform(Min,Max,Num).tolist()}
 
 # การจัดเรียงแบบ permutation
 @app.get("/permutation/{n}/{r}/")
 def permuation(n: int , r : int ):
-    return {"result":math.factorial(int(n))/math.factorial(int(n)-int(r))}
+    return {"result":math.factorial(n)/math.factorial(n-r)}
 
 # การจัดเรียงแบบ commutation
 @app.get("/commutation/{n}/{r}/")
 def commutation(n: int , r : int ):
-    return {"result":math.factorial(int(n))/math.factorial(int(n)-int(r))/math.factorial(int(r))}
+    return {"result":math.factorial(n)/math.factorial(n-r)/math.factorial(r)}
 
 # delay in second
 import time
@@ -112,3 +112,93 @@ async def linear_fit_2D(file: UploadFile):
         'Total_Sum_of_Squares__SST': sst
     }
     return response
+
+# สร้าง API สำหรับแปลงสี RGB เป็น HSL
+# https://www.rapidtables.com/convert/color/rgb-to-hsl.html
+@app.get("/rgb2hsl/{red}/{green}/{blue}/")
+def rgb_to_hsl(red:float,green:float,blue:float):
+    r = red/255; g = green/255; b = blue/255
+    cmin = min(r,g,b); cmax = max(r,g,b); d = cmax-cmin
+    if cmax == 0 or d == 0: h = 0
+    elif r == cmax: h = 60*((g-b)%6)/d
+    elif g == cmax: h = 60*(2+(b-r)/d)
+    elif b == cmax: h = 60*(4+(r-g)/d)
+    l = (cmax+cmin)/2
+    if d==0: s = 0
+    else: s = d/(1-abs(2*l-1))
+    return {"hue": h, "saturation": s, "lightness": l}
+
+# สร้าง API สำหรับแปลงสี HSL เป็น RGB
+# https://www.rapidtables.com/convert/color/hsl-to-rgb.html
+@app.get("/hsl2rgb/{hue}/{saturation}/{lightness}/")
+def hsl_to_rgb(hue:float,saturation:float,lightness:float):
+    h, s, l = hue, saturation, lightness
+    c = (1-abs(2*l-1))*s
+    x = c*(1-abs(((h/60)%2)-1))
+    m = l-c/2
+    if 0<=h<60: r,g,b = c,x,0.
+    elif 60<=h<120: r,g,b = x,c,0
+    elif 120<=h<180: r,g,b = 0,c,x
+    elif 180<=h<240: r,g,b = 0,x,c
+    elif 240<=h<300: r,g,b = x,0,c
+    elif 300<=h<360: r,g,b = c,0,x
+    red = (r+m)*255
+    green = (g+m)*255
+    blue = (b+m)*255
+    return {"red": red, "green": green, "blue": blue}
+
+# สร้าง API สำหรับแปลงสี RGB เป็น HSV
+# https://www.rapidtables.com/convert/color/rgb-to-hsv.html
+@app.get("/rgb2hsv/{red}/{green}/{blue}/")
+def rgb_to_hsv(red:float,green:float,blue:float):
+    r = red/255; g = green/255; b = blue/255
+    cmin = min(r,g,b); cmax = max(r,g,b); d = cmax-cmin
+    if cmax == 0 or d == 0: h = 0
+    elif r == cmax: h = 60*((g-b)%6)/d
+    elif g == cmax: h = 60*(2+(b-r)/d)
+    elif b == cmax: h = 60*(4+(r-g)/d)
+    v = cmax/2
+    if cmax==0: s = 0
+    else: s = d/cmax
+    return {"hue": h, "saturation": s, "value": v}
+
+# สร้าง API สำหรับแปลงสี HSV เป็น RGB
+# https://www.rapidtables.com/convert/color/hsv-to-rgb.html
+@app.get("/hsv2rgb/{hue}/{saturation}/{value}/")
+def hsl_to_rgb(hue:float,saturation:float,value:float):
+    h, s, v = hue, saturation, value
+    c = v*s
+    x = c*(1-abs(((h/60)%2)-1))
+    m = v-c
+    if 0<=h<60: r,g,b = c,x,0.
+    elif 60<=h<120: r,g,b = x,c,0
+    elif 120<=h<180: r,g,b = 0,c,x
+    elif 180<=h<240: r,g,b = 0,x,c
+    elif 240<=h<300: r,g,b = x,0,c
+    elif 300<=h<360: r,g,b = c,0,x
+    red = (r+m)*255
+    green = (g+m)*255
+    blue = (b+m)*255
+    return {"red": red, "green": green, "blue": blue}
+
+
+# สร้าง API สำหรับแปลงสี RGB เป็น CMYK
+# https://www.rapidtables.com/convert/color/rgb-to-cmyk.html
+@app.get("/rgb2cmyk/{red}/{green}/{blue}/")
+def rgb_to_cmyk(red:float,green:float,blue:float):
+    r = red/255; g = green/255; b = blue/255
+    k = 1-max(r,g,b) # black
+    c = (1-r-k)/(1-k)
+    m = (1-g-k)/(1-k)
+    y = (1-b-k)/(1-k)
+    return {"cyan":c,"magenta":m,"yellow":y,"key":k}
+
+# สร้าง API สำหรับแปลงสี CMYK เป็น RGB
+# https://www.rapidtables.com/convert/color/cmyk-to-rgb.html
+@app.get("/cmyk2rgb/{cyan}/{magenta}/{yellow}/{key}/")
+def cmyk_to_rgb(cyan:float,magenta:float,yellow:float,key:float):
+    c,m,y,k = cyan,magenta,yellow,key
+    r = 255*(1-c)*(1-k)
+    g = 255*(1-m)*(1-k)
+    b = 255*(1-y)*(1-k)
+    return {"red": r, "green": g, "blue": b}
