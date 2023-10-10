@@ -49,3 +49,43 @@ import time
 @app.get('/delay/{second}/')
 async def delay(second:float):
     await time.sleep(second)
+
+# api เข้ารหัสไฟล์แปลงเป็นข้อความ base64
+import base64
+@app.post('/file2base64/')
+async def convert_file_to_base64(file:UploadFile):
+    data = await file.read()
+    base64_data = base64.b64encode(data).decode('utf-8')
+    return {"base64_data":base64_data}
+
+
+# api สร้างภาพ qr-code สกุลไฟล์ png แต่จะตอบกลับเป็น base64
+from io import BytesIO
+import qrcode
+@app.get("/generate-qr-code/{data:path}")
+async def generate_qr_code(data: str):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+
+    # สร้าง BytesIO สำหรับเก็บภาพและส่งกลับ
+    img_io = BytesIO()
+    qr_img.save(img_io, "PNG")
+
+    # กลับข้อมูลเป็นไฟล์ภาพ
+    img_io.seek(0)
+
+    img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
+
+    return {
+        "data_uri_scheme": "data:image/png;base64,",
+        "base64_data": img_base64,
+        "img_tag_in_HTML":"<img src=data_uri_scheme+base64_data >"
+    }
