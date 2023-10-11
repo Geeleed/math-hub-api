@@ -54,9 +54,24 @@ async def delay(second:float):
 import base64
 @app.post('/file2base64/')
 async def convert_file_to_base64(file:UploadFile):
-    data = await file.read()
-    base64_data = base64.b64encode(data).decode('utf-8')
+    filedata = await file.read()
+    base64_data = base64.b64encode(filedata).decode('utf-8')
     return {"base64_data":base64_data}
+
+
+# api เข้ารหัสไฟล์แปลงเป็นข้อความ base64 แบบรับมาทีละหลายไฟล์
+from typing import List
+@app.post('/files2base64/')
+async def convert_files_to_base64(files: List[UploadFile] = File(...)):
+    base64_data_list = []
+
+    for file in files:
+        data = await file.read()
+        base64_data = base64.b64encode(data).decode('utf-8')
+        base64_data_list.append(base64_data)
+
+    return {"base64_data": base64_data_list}
+
 
 
 # api สร้างภาพ qr-code สกุลไฟล์ png แต่จะตอบกลับเป็น base64
@@ -84,8 +99,21 @@ async def generate_qr_code(data: str):
 
     img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
 
-    return {
-        "data_uri_scheme": "data:image/png;base64,",
-        "base64_data": img_base64,
-        "img_tag_in_HTML":"<img src=data_uri_scheme+base64_data >"
-    }
+    return {"src":"data:image;base64,"+img_base64}
+
+# api ดูข้อมูลใน <input type='file' multiple> ของ html
+# api ส่งไฟล์ภาพไปแล้วรับกลับมาเป็น src ของ <img src=srcที่ได้> ของ html
+@app.post('/getSrcImgHtml/')
+async def get_src_img_html(file:UploadFile):
+    data = await file.read()
+    base64_data = base64.b64encode(data).decode('utf-8')
+    return {"src":"data:image;base64,"+base64_data}
+
+
+# api คำนวณ BMI โดยใช้ method POST
+@app.post('/bmi/')
+def calc_BMI(weight_kg: float=Form(...), height_cm: float=Form(...)):
+    height_m = height_cm / 100
+    your_BMI = weight_kg / (height_m ** 2)
+    return {"your_BMI": your_BMI}
+
