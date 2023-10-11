@@ -27,7 +27,7 @@ lorem_words = [
     "Lorem", "ipsum", "dolor", "sit", "amet", "consectetur",
     "adipiscing", "elit", "sed", "do", "eiusmod", "tempor",
     "incididunt", "ut", "labore", "et", "dolore", "magna",
-    "aliqua", "a", "the"
+    "aliqua"
 ]
 @app.get("/lorem/{length}")
 def generate_lorem(length: int):
@@ -116,4 +116,31 @@ def calc_BMI(weight_kg: float=Form(...), height_cm: float=Form(...)):
     height_m = height_cm / 100
     your_BMI = weight_kg / (height_m ** 2)
     return {"your_BMI": your_BMI}
+
+# api รับ src ที่เป็น base64 ของ <img> จาก image url
+import requests
+@app.get("/url-to-img-src/{image_url:path}")
+def download_image_to_img_src(image_url: str):
+    # โหลดรูปภาพจาก URL ด้วย requests
+    response = requests.get(image_url)
+    if response.status_code != 200: return "Failed to download image"
+    # อ่านข้อมูลรูปภาพและสร้างไฟล์รูปภาพ
+    image_data = BytesIO(response.content)
+    image_data.seek(0)
+    img_base64 = base64.b64encode(image_data.read()).decode('utf-8')
+    return {"img_src":"data:image;base64,"+img_base64}
+    # return FileResponse(temp_image, media_type="image/jpeg")
+
+# api generate post จะสร้างโพสต์ที่มี id title image description แบบสุ่มให้ เลือกได้ว่าจะเอากี่โพสต์
+@app.get('/gen-post/{numOfPost}/')
+def gen_posts(numOfPost:int):
+    temp = []
+    # image_unsplash_url = 'https://source.unsplash.com/random/400x400/?fruit,night,people,city,star'
+    image_unsplash_url = 'https://source.unsplash.com/random/400x400'
+    for i in range(numOfPost):
+        title = generate_lorem(random.randint(3,5))['lorem_text']
+        image_url = requests.get(image_unsplash_url).url
+        description = generate_lorem(random.randint(25,100))['lorem_text']
+        temp.append({"id":i,"title":title,"img_src":image_url,"description":description})
+    return temp
 
