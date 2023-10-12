@@ -109,7 +109,6 @@ def cmyk2rgb(cyan:float,magenta:float,yellow:float,key:float):
     return {"red": rgb['red'], "green": rgb['green'], "blue": rgb['blue']}
 
 # api แปลงโหมดสี r,g,b [0-255] h[0-360] s,l,v,c,m,y,k [0-1]
-import json
 @app.get('/convert-color-mode/{color_array}/{from_mode}/{to_mode}')
 def convert_color_mode(color_array:str,from_mode:str,to_mode:str):
     color_array = json.loads(color_array)

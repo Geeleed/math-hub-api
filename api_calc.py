@@ -1,17 +1,13 @@
 from header import *
 
-import math
-import numpy as np
-
 # api แปลงเลขฐาน
-@app.get('/convert-base/{number}/{from_base}/{to_base}/')
-def convert_base(number,from_base=10,to_base=16):
+# http://127.0.0.1:8002/convert-base/50a?from_base=16&to_base=2
+@app.get('/convert-base/{number}')
+def convert_base(number:str,from_base:int=10,to_base:int=16):
     keyValue = {
         '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','10':'a','11':'b','12':'c','13':'d','14':'e','15':'f','a':'10','b':'11','c':'12','d':'13','e':'14','f':'15'
         }
-    from_base = int(from_base)
-    to_base = int(to_base)
-    dec = int(str(number),from_base)
+    dec = int(number,from_base)
     result = ''
     while dec>0:
         remainder = dec%to_base
@@ -20,23 +16,21 @@ def convert_base(number,from_base=10,to_base=16):
     return {"result":result}
 
 # สุ่มตัวเลข
-@app.get("/random/{Min}/{Max}/{Num}/")
-def random_number(Min:float,Max:float,Num:int):
+@app.get("/random/{Min}/{Max}")
+def random_number(Min:float,Max:float,Num:int=1):
     return {"result":np.random.uniform(Min,Max,Num).tolist()}
 
 # การจัดเรียงแบบ permutation
-@app.get("/permutation/{n}/{r}/")
+@app.get("/permutation/{n}/{r}")
 def permuation(n: int , r : int ):
     return {"result":math.factorial(n)/math.factorial(n-r)}
 
 # การจัดเรียงแบบ commutation
-@app.get("/commutation/{n}/{r}/")
+@app.get("/commutation/{n}/{r}")
 def commutation(n: int , r : int ):
     return {"result":math.factorial(n)/math.factorial(n-r)/math.factorial(r)}
 
-
-
-# linear fitting from csv
+# api linear fitting from csv
 # example:
 # x,y
 # 1.0,2.3
@@ -44,16 +38,12 @@ def commutation(n: int , r : int ):
 # 3.0,4.2
 # 4.0,5.0
 # 5.0,6.1
-from scipy.stats import linregress
-from io import StringIO
-
 def read_csv(file_contents):
     data = []
     csv_file = StringIO(file_contents.decode('utf-8'))
     data = np.genfromtxt(csv_file, delimiter=',', skip_header=1, dtype=float)
     return data
-
-@app.post("/linear-fit-2d/")
+@app.post("/linear-fit-2d")
 async def linear_fit_2D(file: UploadFile):
     # อ่านข้อมูล CSV
     try:
