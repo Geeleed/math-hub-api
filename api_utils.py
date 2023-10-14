@@ -44,7 +44,7 @@ def sha256(text:str):
 
 # api เข้ารหัสข้อความ sha512
 @app.get('/sha512/{text}')
-def sha256(text:str):
+def sha512(text:str):
     inst = hashlib.sha512()
     inst.update(text.encode('utf-8'))
     hash_binary = inst.digest()
