@@ -35,7 +35,17 @@ def generate_lorem(length: int=5):
 # api เข้ารหัสข้อความ sha256
 @app.get('/sha256/{text}')
 def sha256(text:str):
+    hashlib.sha512
     inst = hashlib.sha256()
+    inst.update(text.encode('utf-8'))
+    hash_binary = inst.digest()
+    hash_hex = hash_binary.hex()
+    return {"hash_hex":hash_hex}
+
+# api เข้ารหัสข้อความ sha512
+@app.get('/sha512/{text}')
+def sha256(text:str):
+    inst = hashlib.sha512()
     inst.update(text.encode('utf-8'))
     hash_binary = inst.digest()
     hash_hex = hash_binary.hex()
@@ -75,7 +85,7 @@ async def generate_qr_code(data: str):
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
-        border=4,
+        border=2,
     )
     qr.add_data(data)
     qr.make(fit=True)
@@ -93,7 +103,6 @@ async def generate_qr_code(data: str):
 
     return {"src":"data:image;base64,"+img_base64}
 
-# api ดูข้อมูลใน <input type='file' multiple> ของ html
 # api ส่งไฟล์ภาพไปแล้วรับกลับมาเป็น src ของ <img src=srcที่ได้> ของ html
 @app.post('/getSrcImgHtml')
 async def get_src_img_html(file:UploadFile):
@@ -136,3 +145,36 @@ def gen_posts(n:int=1):
         temp.append({"id":i,"title":title,"img_src":image_url,"description":description})
     return temp
 
+# api คำภาษาอังกฤษ
+@app.get('/en-words')
+def en_words():
+    words = requests.get('https://raw.githubusercontent.com/Geeleed/CollectTheWords/main/EN_words.json')
+    data = json.loads(words.text)
+    return data
+
+# api คำภาษาไทย
+@app.get('/th-words')
+def th_words():
+    words = requests.get('https://raw.githubusercontent.com/Geeleed/CollectTheWords/main/TH_words.json')
+    data = json.loads(words.text)
+    return data
+
+# api dictionary english to thai
+@app.get('/en2th')
+def en2th():
+    words = requests.get('https://raw.githubusercontent.com/Geeleed/CollectTheWords/main/EN2TH_Dict.json')
+    data = json.loads(words.text)
+    return data
+
+# # WebSocket endpoint
+# @app.websocket("/ws/{client_id}")
+# async def websocket_endpoint(websocket: WebSocket, client_id: int):
+#     await websocket.accept()
+#     while True:
+#         data = await websocket.receive_text()
+#         await websocket.send_text(f"Message text was: {data} ")
+
+# api ตรวจสอบสิทธิ์การเข้าถึงข้อมูล
+# @app.post('/auth/{token}')
+# def authentication():
+#     pass
