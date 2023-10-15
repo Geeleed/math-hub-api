@@ -35,7 +35,6 @@ def generate_lorem(length: int=5):
 # api เข้ารหัสข้อความ sha256
 @app.get('/sha256/{text}')
 def sha256(text:str):
-    hashlib.sha512
     inst = hashlib.sha256()
     inst.update(text.encode('utf-8'))
     hash_binary = inst.digest()
@@ -165,6 +164,135 @@ def en2th():
     words = requests.get('https://raw.githubusercontent.com/Geeleed/CollectTheWords/main/EN2TH_Dict.json')
     data = json.loads(words.text)
     return data
+
+
+def circleSelect(istart,ishift,length):
+    return (ishift%length+istart)%length
+def convertBase(number:str,from_base:int=10,to_base:int=16,lenHex=6):
+    keyValue = {
+        '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','10':'a','11':'b','12':'c','13':'d','14':'e','15':'f','a':'10','b':'11','c':'12','d':'13','e':'14','f':'15'
+        }
+    dec = int(number,from_base)
+    result = ''
+    while dec>0:
+        remainder = dec%to_base
+        result = keyValue[str(remainder)]+result
+        dec //= to_base
+    if len(result)<lenHex:
+        return "0"*(lenHex-len(result))+result
+    return result
+def char2hex(char):
+    dec = str(ord(char))
+    return convertBase(dec,10,16)
+def text2hex(text):
+    Hex = ''
+    for c in text:
+        Hex += char2hex(c)
+    return Hex
+# เข้ารหัสข้อความส่วนตัว
+def encryptor(key:str,text:str):
+    text = text2hex(text)
+
+    # กำหนดตารางเทียบ
+    char = '0123456789abcdef'
+    # char = '01'
+    # EN = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./"+'\\'+' '+'~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"ZXCVBNM<>?'+'{'+'}'
+    # TH = '_ๅ/-ภถุึคตจขชๆไำพะัีรนยบลฃฟหกดเ้่าสวงผปแอิืทมใฝ %+๑๒๓๔ู฿๕๖๗๘๙๐"ฎฑธํ๊ณฯญฐ,ฅฤฆฏโฌ็๋ษศซ.()ฉฮฺ์?ฒฬฦ'
+    # char = EN
+    # for c in TH:
+    #     if not c in char: char+=c
+
+    L = len(char)
+
+    init = sha256(key)['hash_hex']
+    LK = len(init)
+    LT = len(text)
+
+    numOfBox = math.ceil(LT/LK)
+    # ตัดข้อความเป็นกล่อง ๆ
+    splitToBox = []
+    hashBox = []
+    for i in range(numOfBox):
+        start = i*LK
+        end = (i+1)*LK
+        txt = text[start:end]
+        splitToBox.append(txt)
+        hashBox.append(sha256(txt)['hash_hex'])
+        
+    hashBox = [init]+hashBox
+
+    # เข้ารหัสแล้วเก็บทีละ box
+    lock = ''
+    for box in range(numOfBox):
+        i = 0
+        rec = ''
+        for letter in splitToBox[box]:
+            newInx = circleSelect(char.index(letter),int(hashBox[box][i],16),L)
+            i += 1
+            rec += char[newInx]
+        lock += rec
+    return lock
+
+# ถอดรหัสข้อมูลส่วนตัว
+def decryptor(key:str,text:str):
+    # กำหนดตารางเทียบ
+    char = '0123456789abcdef'
+    # char = '01'
+    # EN = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./"+'\\'+' '+'~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"ZXCVBNM<>?'+'{'+'}'
+    # TH = '_ๅ/-ภถุึคตจขชๆไำพะัีรนยบลฃฟหกดเ้่าสวงผปแอิืทมใฝ %+๑๒๓๔ู฿๕๖๗๘๙๐"ฎฑธํ๊ณฯญฐ,ฅฤฆฏโฌ็๋ษศซ.()ฉฮฺ์?ฒฬฦ'
+    # char = EN
+    # for c in TH:
+    #     if not c in char: char+=c
+
+    L = len(char)
+
+    init = sha256(key)['hash_hex']
+    LK = len(init)
+    LT = len(text)
+
+    numOfBox = math.ceil(LT/LK)
+    # ตัดข้อความเป็นกล่อง ๆ
+    splitToBox = []
+    for i in range(numOfBox):
+        start = i*LK
+        end = (i+1)*LK
+        txt = text[start:end]
+        splitToBox.append(txt)
+
+    unlock16 = ''
+    hashBox = init
+    for box in range(numOfBox):
+        i = 0
+        rec = ''
+        for letter in splitToBox[box]:
+            newInx = circleSelect(char.index(letter),-int(hashBox[i],16),L)
+            i += 1
+            rec += char[newInx]
+        unlock16 += rec
+        hashBox = sha256(rec)['hash_hex']
+
+    splitToHex = []
+    lenHex = 6
+    for i in range(int(LT/lenHex)):
+        start = i*lenHex
+        end = (i+1)*lenHex
+        txt = unlock16[start:end]
+        splitToHex.append(txt)
+    unlock = ''
+    for hex in splitToHex:
+        decrypt = int(hex,16)
+        unlock += chr(decrypt)
+    return unlock
+
+# api เข้ารหัสและถอดรหัสข้อความส่วนตัว
+@app.get('/cryptor/{key}/{text}')
+def cryptor(key:str,text:str,mode='lock'):
+    if mode=='lock':
+        result = encryptor(key,text)
+    elif mode=='unlock':
+        result = decryptor(key,text)
+    return {"result":result}
+    
 
 # # WebSocket endpoint
 # @app.websocket("/ws/{client_id}")
