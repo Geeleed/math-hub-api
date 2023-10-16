@@ -181,46 +181,34 @@ def convertBase(number:str,from_base:int=10,to_base:int=16,lenHex=6):
     if len(result)<lenHex:
         return "0"*(lenHex-len(result))+result
     return result
-def char2hex(char):
+def char2hex(char,lenHex=6):
     dec = str(ord(char))
-    return convertBase(dec,10,16)
-def text2hex(text):
+    return convertBase(dec,10,16,lenHex)
+def text2hex(text,lenHex=6):
     Hex = ''
     for c in text:
-        Hex += char2hex(c)
+        Hex += char2hex(c,lenHex)
     return Hex
 # เข้ารหัสข้อความส่วนตัว
-def encryptor(key:str,text:str):
+def encryptor16(key:str,text:str):
     text = text2hex(text)
-
-    # กำหนดตารางเทียบ
     char = '0123456789abcdef'
-    # char = '01'
-    # EN = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./"+'\\'+' '+'~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"ZXCVBNM<>?'+'{'+'}'
-    # TH = '_ๅ/-ภถุึคตจขชๆไำพะัีรนยบลฃฟหกดเ้่าสวงผปแอิืทมใฝ %+๑๒๓๔ู฿๕๖๗๘๙๐"ฎฑธํ๊ณฯญฐ,ฅฤฆฏโฌ็๋ษศซ.()ฉฮฺ์?ฒฬฦ'
-    # char = EN
-    # for c in TH:
-    #     if not c in char: char+=c
-
     L = len(char)
-
     init = sha256(key)['hash_hex']
     LK = len(init)
     LT = len(text)
-
     numOfBox = math.ceil(LT/LK)
     # ตัดข้อความเป็นกล่อง ๆ
     splitToBox = []
     hashBox = []
     for i in range(numOfBox):
         start = i*LK
-        end = (i+1)*LK
+        # end = (i+1)*LK
+        end = (i+1)*LK if i < numOfBox - 1 else LT
         txt = text[start:end]
         splitToBox.append(txt)
         hashBox.append(sha256(txt)['hash_hex'])
-        
     hashBox = [init]+hashBox
-
     # เข้ารหัสแล้วเก็บทีละ box
     lock = ''
     for box in range(numOfBox):
@@ -232,33 +220,22 @@ def encryptor(key:str,text:str):
             rec += char[newInx]
         lock += rec
     return lock
-
 # ถอดรหัสข้อมูลส่วนตัว
-def decryptor(key:str,text:str):
+def decryptor16(key:str,text:str):
     # กำหนดตารางเทียบ
     char = '0123456789abcdef'
-    # char = '01'
-    # EN = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./"+'\\'+' '+'~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"ZXCVBNM<>?'+'{'+'}'
-    # TH = '_ๅ/-ภถุึคตจขชๆไำพะัีรนยบลฃฟหกดเ้่าสวงผปแอิืทมใฝ %+๑๒๓๔ู฿๕๖๗๘๙๐"ฎฑธํ๊ณฯญฐ,ฅฤฆฏโฌ็๋ษศซ.()ฉฮฺ์?ฒฬฦ'
-    # char = EN
-    # for c in TH:
-    #     if not c in char: char+=c
-
     L = len(char)
-
     init = sha256(key)['hash_hex']
     LK = len(init)
     LT = len(text)
-
     numOfBox = math.ceil(LT/LK)
     # ตัดข้อความเป็นกล่อง ๆ
     splitToBox = []
     for i in range(numOfBox):
         start = i*LK
-        end = (i+1)*LK
+        end = (i+1)*LK if i < numOfBox - 1 else LT
         txt = text[start:end]
         splitToBox.append(txt)
-
     unlock16 = ''
     hashBox = init
     for box in range(numOfBox):
@@ -270,7 +247,6 @@ def decryptor(key:str,text:str):
             rec += char[newInx]
         unlock16 += rec
         hashBox = sha256(rec)['hash_hex']
-
     splitToHex = []
     lenHex = 6
     for i in range(int(LT/lenHex)):
@@ -284,15 +260,68 @@ def decryptor(key:str,text:str):
         unlock += chr(decrypt)
     return unlock
 
-# api เข้ารหัสและถอดรหัสข้อความส่วนตัว
-@app.get('/cryptor/{key}/{text}')
-def cryptor(key:str,text:str,mode='lock'):
+# api เข้ารหัสและถอดรหัสข้อความส่วนตัวเป็นเลขฐาน 16 รองรับทุกอักขระ
+@app.get('/cryptor16/{key}/{text}')
+def cryptor16(key:str,text:str,mode='lock'):
     if mode=='lock':
-        result = encryptor(key,text)
+        result = encryptor16(key,text)
     elif mode=='unlock':
-        result = decryptor(key,text)
+        result = decryptor16(key,text)
     return {"result":result}
-    
+
+# api เข้ารหัสข้อมูลส่วนตัวโดยสามารถกำหนดเซตของตัวอักษรที่ใช้เพื่อเข้ารหัสได้
+@app.get('/cryptcode/{key}/{text}')
+def cryptcode(key:str, text:str, mode:str='lock',
+    charSet:str = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./"+'\\'+' '
+    +'~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"ZXCVBNM<>?'+'{'+'}'):
+    # charSet:str = "`1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./\ ~!@#$%^&*()_+QWERTYUIOP|ASDFGHJKL:"+
+    # '"ZXCVBNM<>?{'+'}ๅภถุึคตจขชๆไำพะัีรนยบลฃฟหกดเ้่าสวงผปแอิืทมใฝ๑๒๓๔ู฿๕๖๗๘๙๐ฎฑธํ๊ณฯญฐฅฤฆฏโฌ็๋ษศซฉฮฺ์ฒฬฦ'):
+    lenChr = len(charSet)
+    hex_key = sha256(key)['hash_hex']
+    len_hex_key = len(hex_key)
+    len_text = len(text)
+    numOfBox = math.ceil(len_text/len_hex_key)
+    for letterHexKey in hex_key:
+        hash_term = sha256(letterHexKey)['hash_hex']
+        result = []
+        for box in range(numOfBox):
+            start = box*len_hex_key
+            end = (box+1)*len_hex_key if box < numOfBox-1 else len_text
+            block = text[start:end]
+            i = 0; newBlock = []
+            for letter in block:
+                ishift = 1 if mode=='lock' else -1
+                newInx = circleSelect(charSet.index(letter),ishift*int(hash_term[i],16),lenChr)
+                i += 1
+                newLetter = charSet[newInx]
+                newBlock.append(newLetter)
+            block_add_hash = ''.join(newBlock)
+            result.append(block_add_hash)
+            hash_term = sha256(block)['hash_hex']
+        text = ''.join(result)
+    return {'result':text}
+
+# api เข้ารหัสและถอดรหัสข้อมูลส่วนตัวเป็นเลขฐาน 16
+@app.get('/cryptcode16/{key}/{text}')
+def cryptcode16(key:str,text:str,
+    mode:str='lock'):
+    charSet = '0123456789abcdef'
+    lenHex = 6
+    text = text2hex(text,lenHex) if mode == 'lock' else text
+    text = cryptcode(key,text,mode,charSet)['result']
+    if mode == 'unlock':
+        splitToHex = []
+        for i in range(int(len(text)/lenHex)):
+            start = i*lenHex
+            end = (i+1)*lenHex
+            txt = text[start:end]
+            splitToHex.append(txt)
+        unlock = []
+        for hex in splitToHex:
+            decrypt = int(hex,16)
+            unlock.append(chr(decrypt))
+        text = ''.join(unlock)
+    return {'result':text}
 
 # # WebSocket endpoint
 # @app.websocket("/ws/{client_id}")
