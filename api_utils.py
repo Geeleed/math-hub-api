@@ -194,7 +194,7 @@ def encryptor16(key:str,text:str):
     text = text2hex(text)
     char = '0123456789abcdef'
     L = len(char)
-    init = sha256(key)['hash_hex']
+    init = sha256(key+str(len(text)))['hash_hex']
     LK = len(init)
     LT = len(text)
     numOfBox = math.ceil(LT/LK)
@@ -225,7 +225,7 @@ def decryptor16(key:str,text:str):
     # กำหนดตารางเทียบ
     char = '0123456789abcdef'
     L = len(char)
-    init = sha256(key)['hash_hex']
+    init = sha256(key+str(len(text)))['hash_hex']
     LK = len(init)
     LT = len(text)
     numOfBox = math.ceil(LT/LK)
@@ -302,26 +302,26 @@ def cryptcode(key:str, text:str, mode:str='lock',
     return {'result':text}
 
 # api เข้ารหัสและถอดรหัสข้อมูลส่วนตัวเป็นเลขฐาน 16
-@app.get('/cryptcode16/{key}/{text}')
-def cryptcode16(key:str,text:str,
-    mode:str='lock'):
-    charSet = '0123456789abcdef'
-    lenHex = 6
-    text = text2hex(text,lenHex) if mode == 'lock' else text
-    text = cryptcode(key,text,mode,charSet)['result']
-    if mode == 'unlock':
-        splitToHex = []
-        for i in range(int(len(text)/lenHex)):
-            start = i*lenHex
-            end = (i+1)*lenHex
-            txt = text[start:end]
-            splitToHex.append(txt)
-        unlock = []
-        for hex in splitToHex:
-            decrypt = int(hex,16)
-            unlock.append(chr(decrypt))
-        text = ''.join(unlock)
-    return {'result':text}
+# @app.post('/cryptcode16')
+# def cryptcode16(key:str,text:str,
+#     mode:str='lock'):
+#     charSet = '0123456789abcdef'
+#     lenHex = 6
+#     text = text2hex(text,lenHex) if mode == 'lock' else text
+#     text = cryptcode(key,text,mode,charSet)['result']
+#     if mode == 'unlock':
+#         splitToHex = []
+#         for i in range(int(len(text)/lenHex)):
+#             start = i*lenHex
+#             end = (i+1)*lenHex
+#             txt = text[start:end]
+#             splitToHex.append(txt)
+#         unlock = []
+#         for hex in splitToHex:
+#             decrypt = int(hex,16)
+#             unlock.append(chr(decrypt))
+#         text = ''.join(unlock)
+#     return {'result':text}
 
 # # WebSocket endpoint
 # @app.websocket("/ws/{client_id}")
