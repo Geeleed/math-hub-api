@@ -336,12 +336,12 @@ def cryptcode(key:str, text:str, mode:str='lock',
 # def authentication():
 #     pass
 
-def google_translate(text:str):
-    get = requests.get('https://translate.google.co.th/?sl=en&tl=th&text='+text+'&op=translate')
-    soup = BeautifulSoup(get.text,"html.parser")
-    # print(soup.span)
-    span_ryNqvb = soup.find('span',{'class','jCAhz ChMk0b'})
-    # span_ryNqvb = soup.find_all('span',string='สวัสดี')
-    print(span_ryNqvb)
+# def google_translate(text:str):
+#     get = requests.get('https://translate.google.co.th/?sl=en&tl=th&text='+text+'&op=translate')
+#     soup = BeautifulSoup(get.text,"html.parser")
+#     # print(soup.span)
+#     span_ryNqvb = soup.find('span',{'class','jCAhz ChMk0b'})
+#     # span_ryNqvb = soup.find_all('span',string='สวัสดี')
+#     print(span_ryNqvb)
 
 # google_translate('hello')

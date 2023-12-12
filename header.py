@@ -12,7 +12,7 @@ import json
 from scipy.stats import linregress
 import math
 import numpy as np
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
